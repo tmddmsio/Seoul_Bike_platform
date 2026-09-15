@@ -68,6 +68,7 @@
     const resultWeather =
         document.getElementById("resultWeather");
     const ai_run = document.getElementById("ai_run")
+    const historyWeather = document.getElementById("historyWeather")
     ai_run.addEventListener("click",function(e){
         e.preventDefault();
         if(!send_data.user_data.length || !send_data.user_sub.length){
@@ -80,7 +81,14 @@
         },body:JSON.stringify(send_data)})
         .then(pendding=>pendding.json())
         .then(data=>{
-            console.log(data)
+            let inHtml=`
+                <p><span style="display: inline-block;width:78%">${info_weather.innerHTML}</span>
+                <span style="display: inline-block;width:20%">${data} 대 필요예측</span></p>
+                <hr style="border-color: blue">
+
+            `
+            historyWeather.innerHTML+=inHtml
+            //필요한 따릉이 예측 +=로 예측 결과 데이터 누적 표시
             send_data= {user_data:[],user_sub:[]}
         })
 
@@ -108,6 +116,7 @@
         busan:[35.1796,129.0756],
         daejun:[36.3504,127.3845]
     }
+    const local_name={gwangju: "광주", seoul: "서울", jeju: "제주", busan: "부산", daejun: "대전"}
     let latitude = 0;
     let longitude = 0;
 
@@ -191,6 +200,7 @@
                 날짜:${exam_time.toLocaleString('ko-KR',{month:'2-digit',
                   day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
                  &nbsp;&nbsp;&nbsp;${season_label[get_season]}  ${holi_label[get_holiday]}<br>
+                 &nbsp;&nbsp;&nbsp;[${local_name[selectBox.value]}]
                  온도:${send_data.user_data[1]} 습도:${send_data.user_data[2]} 풍속:${send_data.user_data[3]} 가시거리:${send_data.user_data[4]}
                  이슬점온도:${send_data.user_data[5]} 일사량:${send_data.user_data[6]} 강수량:${send_data.user_data[7]} 적설량:${send_data.user_data[8]}
 
