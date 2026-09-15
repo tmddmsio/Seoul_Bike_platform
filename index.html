@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        *{margin:0;padding:0}
+        #sel_locate,#sel_season{width:12rem;text-align:center}
+        label{margin-left:2rem}
+        h1{height:6rem;line-height:6rem;
+            text-align:center;background-color:Ivory}
+        hr{margin:0.5rem;border-color:silver;border-style:groove;
+                margin-bottom:3rem}
+        #getWeather,#ai_run{margin-left:1rem;position:absolute;top:6rem;height:4.7rem}
+        #ai_run{right:1rem;background:blue;color:white}
+        #info_weather{background:Cornsilk;height:3rem;margin-top:1rem}
+    </style>
+
+</head>
+<body>
+<!--# Hour 시간대0  Temperature 온도1 Humidity 습도2  Wind speed 풍속 3
+# Visibility 가시거리 4 Dew point tmeperature 안개 5 Solar Radiation 일사량 6
+# Rainfall 강수량 7 Snowfall (cm) 적설량8
+# Seasons 계절 11, # Holiday 휴일 여부-->
+    <h1>서울지역 바이크 대여량 예측 [회귀분석]</h1>
+    <form>
+        <label>지역선택
+            <select id="sel_locate">
+                <option selected value="gwangju">광주광역시</option>
+                <option value="seoul">서울특별시</option>
+                <option value="jeju">제주자치시</option>
+                <option value="busan">부산광역시</option>
+                <option value="daejun">대전광역시</option>
+            </select>
+        </label>
+        <label>계절선택
+            <select id="sel_season">
+                <option selected value="Spring"> 봄 </option>
+                <option value="Summer">여 름</option>
+                <option value="Autumn">가 을</option>
+                <option value="Winter">겨 울</option>
+            </select>
+        </label><br><br><br>
+        <label>휴일여부</label>
+        <span style="background:yellow">
+            <label><input type="radio" name="holi"
+                          value="Holiday"/>휴 일</label>
+            <label style="margin-right:2rem">
+                <input type="radio"  name="holi"
+                       value="No Holiday" checked/>평 일
+            </label>
+        </span>
+        <label>시간선택 : <input type="number" value="" id="get_hour"> 시</label>
+        <button id="getWeather">날씨가져오기(meteo)<br>①</button>
+        <button id="ai_run">필요한 따릉이 예측<br>②</button>
+        <div id="info_weather"></div>
+        <hr>
+        <div id="historyWeather"></div>
+
+
+    </form>
+</body>
+<script>
+    const getWeather =
+        document.getElementById("getWeather");
+    const selectBox =
+        document.getElementById("sel_locate");
+    const resultWeather =
+        document.getElementById("resultWeather");
+    const ai_run = document.getElementById("ai_run")
+    ai_run.addEventListener("click",function(e){
+        e.preventDefault();
+        if(!send_data.user_data.length || !send_data.user_sub.length){
+            alert("데이터 입력후 날씨 가져오기를 먼저 선택하세요")
+            return false;
+        }
+        //서버로 데이터 송수신
+        fetch('/anal_data',{method:"post",headers:{
+            "Content-Type":"application/json"
+        },body:JSON.stringify(send_data)})
+        .then(pendding=>pendding.json())
+        .then(data=>{
+            console.log(data)
+            send_data= {user_data:[],user_sub:[]}
+        })
+
+    })
+    getWeather.addEventListener("click",function(e){
+         e.preventDefault()
+         console.log(`선택한지역 : ${selectBox.value}`)
+         latitude=locations[selectBox.value][0]
+         longitude=locations[selectBox.value][1]
+         console.log(latitude,longitude)
+         get_hour = document.getElementById("get_hour").value
+         console.log(get_hour)
+         get_season = document.getElementById("sel_season").value
+         console.log(get_season)
+         get_holiday= document.querySelector("input[name='holi']:checked").value;
+         console.log(get_holiday)
+         //날씨데이터 가져오기
+         get_weatherapi();
+    })
+
+    const locations = {
+        gwangju:[35.139958,126.793668],
+        seoul:[37.5665,126.9780],
+        jeju:[33.4996,126.5312],
+        busan:[35.1796,129.0756],
+        daejun:[36.3504,127.3845]
+    }
+    let latitude = 0;
+    let longitude = 0;
+
+//Hour 시간대0  Temperature 온도1 Humidity 습도2  Wind speed 풍속 3
+// Visibility 가시거리 4 Dew point tmeperature 안개 5 Solar Radiation 일사량 6
+// Rainfall 강수량 7 Snowfall (cm) 적설량8
+// Seasons 계절 11, # Holiday 휴일 여부
+    //user_data = [8,12,40,2.5,1500,-10,0.8,0,0]
+    //user_sub = ["Winter","No Holiday"]
+
+    let get_hour = 0// 사용자에게 수신데이터
+    let get_season = ""// 사용자에게 수신데이터
+    let get_holiday = ""// 사용자에게 수신데이터
+    const season_label = {Winter:"겨울",Summer:"여름",
+                    Spring:"봄",Autumn:"가을"}
+    const holi_label = {Holiday:"휴 일", "No Holiday":"평 일"}
+    let send_data = {user_data:[],user_sub:[]}
+    function get_weatherapi(){
+        const url =`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=shortwave_radiation,temperature_2m,relative_humidity_2m,visibility,wind_speed_10m,dew_point_2m,rain,snowfall&forecast_days=1`
+        const exam_time = new Date();
+        if(check()){
+            alert("모든 항목을 입력 또는 선택해야 합니다.")
+            return false;
+        }
+        // 현재로부터 1시간 후의 따릉이 필요양을 출력한다.
+        exam_time.setHours(exam_time.getHours()+1)
+        console.log(exam_time.getHours())
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+          send_data = {user_data:[],user_sub:[]}
+          console.log("데이터수신")
+          //utc 시간을 한국시간으로 변경
+            data.hourly.time = data.hourly.time.map(function(item){
+                return new Date(new Date(item).getTime()
+                    +1000*60*60*9)
+            })
+            console.log(data.hourly.time)
+            const findex = data.hourly.time.findIndex(function(item){
+                return item.getHours()==exam_time.getHours()
+            })
+            // 시간에 맞춘 온도, 습도 등의 특성변수 값 파악 == 따릉이 데이터 값과 정합성검증
+            console.log(findex)
+            //시간
+            send_data.user_data.push(get_hour)
+            //온도
+            console.log(`Temperature:${data.hourly.temperature_2m[findex]}`)
+            send_data.user_data.push(data.hourly.temperature_2m[findex])
+            //습도
+            console.log(`Humidity:${data.hourly.relative_humidity_2m[findex]}`)
+            send_data.user_data.push(data.hourly.relative_humidity_2m[findex])
+            //풍속
+            console.log(`Wind speed:${calc_winspeend(
+                    data.hourly.wind_speed_10m[findex])}`)
+            send_data.user_data.push(calc_winspeend(data.hourly.wind_speed_10m[findex]))
+            //가시거리
+            console.log(`Visibility:${calc_visibility(data.hourly.visibility[findex])}`)
+            send_data.user_data.push(calc_visibility(data.hourly.visibility[findex]))
+            //이슬점온도(습한정도)
+            console.log(`Dew point tmeperature:${data.hourly.dew_point_2m[findex]}`)
+            send_data.user_data.push(data.hourly.dew_point_2m[findex])
+            //일사량
+            console.log(`Solar Radiation :${calc_solar(data.hourly.shortwave_radiation[findex])}`)
+            send_data.user_data.push(calc_solar(data.hourly.shortwave_radiation[findex]))
+            //강우량
+            console.log(`Rainfall :${data.hourly.rain[findex]}`)
+            send_data.user_data.push(data.hourly.rain[findex])
+            //적설량
+            console.log(`Snowfall:${data.hourly.snowfall[findex]}`)
+            send_data.user_data.push(data.hourly.snowfall[findex])
+            //계절,휴일여부 데이터 생성
+            send_data.user_sub.push(get_season)
+            send_data.user_sub.push(get_holiday)
+            console.log(send_data)
+            const info_weather =
+                document.getElementById("info_weather")
+            console.log(get_season)
+            console.log(get_holiday)
+            //&nbsp는 html문서에 공백을 추가하는 기호
+            const inText = `
+                날짜:${exam_time.toLocaleString('ko-KR',{month:'2-digit',
+                  day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
+                 &nbsp;&nbsp;&nbsp;${season_label[get_season]}  ${holi_label[get_holiday]}<br>
+                 온도:${send_data.user_data[1]} 습도:${send_data.user_data[2]} 풍속:${send_data.user_data[3]} 가시거리:${send_data.user_data[4]}
+                 이슬점온도:${send_data.user_data[5]} 일사량:${send_data.user_data[6]} 강수량:${send_data.user_data[7]} 적설량:${send_data.user_data[8]}
+
+            `
+              //&nbsp와 <br>은 innerTEXT는 읽을 수 없으니 아래 innerHTML로 바꿔준다.
+            console.log("호출확인")
+            info_weather.innerHTML=inText;
+            //request_bike_count();//test 호출 코드
+          });
+    }
+    function request_bike_count(){
+        fetch("/anal_data",{method:"post",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(send_data)})
+        .then(pendd=>pendd.json())
+        .then(result=>console.log(result))
+    }
+    //풍속환산함수
+    function calc_winspeend(m10){
+        return parseInt(((m10/10)+0.66)*10000)/10000
+    }
+    //가시거리 환산
+    function calc_visibility(vi_data){
+        return parseInt(vi_data/13.5)
+    }
+    //일사량 환산
+    function calc_solar(sol_data){
+        return sol_data * 0.0036
+    }
+    //입력값 체크 함수
+    function check(){
+        let chk = false
+        console.log("진입")
+        if(!latitude)chk=true
+        if(!longitude)chk=true
+        if(!get_season)chk=true
+        if(!get_holiday)chk=true
+        if(!get_hour)chk=true
+        return chk;
+    }
+</script>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>진자 작동 테스트</title>
+</head>
+<body>
+    <h1>진자 작동 페이지-{{name}}</h1>
+    <form id="myform">
+        <label>
+            이름
+            <input type="text" value="박만식" name="myname">
+        </label>
+        <label>
+            나이
+            <input type="number" value="29" name="myage">
+        </label><br>
+        <input type="submit" value="전송">
+    </form>
+<img src = "/assets/img/배너광고.png"
+</body>
+<script>
+    // get 방식의 요청 1.
+    fetch(`/test/api?name=홍길동&age=40`)
+    .then(pend=>pend.json())
+    .then(res=>console.log(res))
+    // post 방식의 요청 2.
+    fetch("/test/api_1",{
+        method:'post',
+        headers:{
+        "Content-Type":"application/json"},
+        body:JSON.stringify({name:"박주주",age:45})})
+    .then(pendd=>pendd.json())
+    .then(data=>console.log(data))
+    //form 데이터 요청응답 3.
+    const myform =
+        document.getElementById("myform")
+    const formData = new FormData(myform)
+    fetch("/test/api_2",{
+        method:"post",
+        body:formData}).then(pend=>pend.json())
+    .then(res=>console.log(res))
+
+</script>
+</html>
